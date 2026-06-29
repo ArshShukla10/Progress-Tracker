@@ -1,5 +1,6 @@
-import { PageContainer } from "@/components/layout/page-container";
+import { AcademicsOverview } from "@/components/academics/academics-overview";
+import { academicService } from "@/services/academic-service";
 
 export default function AcademicsPage() {
-  return <PageContainer />;
+  return <AcademicsOverview semesters={academicService.getSemesterSummaries()} />;
 }

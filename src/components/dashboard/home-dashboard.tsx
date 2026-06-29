@@ -1,0 +1,226 @@
+"use client";
+
+import { motion } from "framer-motion";
+import { ArrowRight, BookOpen, CalendarDays, GraduationCap, NotebookText } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
+import { academicService } from "@/services/academic-service";
+import type { DashboardData } from "@/types/academic";
+
+const actionIcons = [BookOpen, NotebookText, CalendarDays, GraduationCap] as const;
+
+function getGreeting() {
+  const hour = new Date().getHours();
+
+  if (hour < 12) {
+    return "Good morning";
+  }
+
+  if (hour < 17) {
+    return "Good afternoon";
+  }
+
+  return "Good evening";
+}
+
+export function HomeDashboard() {
+  const [completedTasks, setCompletedTasks] = useState<string[]>([]);
+  const greeting = useMemo(() => getGreeting(), []);
+  const dashboardData = useMemo(() => academicService.getDashboardData(), []);
+
+  function toggleTask(taskId: string) {
+    setCompletedTasks((currentTasks) =>
+      currentTasks.includes(taskId)
+        ? currentTasks.filter((id) => id !== taskId)
+        : [...currentTasks, taskId],
+    );
+  }
+
+  return (
+    <motion.section
+      className="mx-auto flex w-full max-w-7xl flex-col gap-8"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <GreetingSection greeting={greeting} profile={dashboardData.profile} />
+
+      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+        <TodaysMission
+          completedTasks={completedTasks}
+          mission={dashboardData.mission}
+          onToggleTask={toggleTask}
+        />
+        <ContinueLearning continueLearning={dashboardData.continueLearning} />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <SemesterProgress progress={dashboardData.semesterProgress} />
+        <QuickActions quickActions={dashboardData.quickActions} />
+      </div>
+    </motion.section>
+  );
+}
+
+function GreetingSection({
+  greeting,
+  profile,
+}: {
+  greeting: string;
+  profile: DashboardData["profile"];
+}) {
+  return (
+    <section className="rounded-lg border border-border/80 bg-card/60 px-6 py-7 shadow-shell sm:px-8">
+      <p className="text-sm font-medium text-primary">{profile.semester}</p>
+      <div className="mt-3 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
+            {greeting}, {profile.name}
+          </h1>
+          <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
+            Your study space is ready. Start with today&apos;s mission, then continue the next topic.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function TodaysMission({
+  completedTasks,
+  mission,
+  onToggleTask,
+}: {
+  completedTasks: string[];
+  mission: DashboardData["mission"];
+  onToggleTask: (taskId: string) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Today&apos;s Mission</CardTitle>
+        <CardDescription>{mission.length} focused study tasks for this session.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {mission.map((task) => {
+            const checked = completedTasks.includes(task.id);
+
+            return (
+              <label
+                key={task.id}
+                className="flex min-h-14 cursor-pointer items-center gap-4 rounded-md border border-border/70 bg-background/32 px-4 transition-colors hover:bg-secondary/45"
+              >
+                <Checkbox checked={checked} onChange={() => onToggleTask(task.id)} />
+                <span
+                  className={cn(
+                    "text-sm font-medium text-foreground transition-colors",
+                    checked && "text-muted-foreground line-through",
+                  )}
+                >
+                  {task.title}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ContinueLearning({
+  continueLearning,
+}: {
+  continueLearning: DashboardData["continueLearning"];
+}) {
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader>
+        <CardTitle>Continue Learning</CardTitle>
+        <CardDescription>The next study block waiting for you.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-md border border-border/70 bg-background/36 p-5">
+          <p className="text-sm font-medium text-primary">{continueLearning.subject}</p>
+          <h2 className="mt-4 text-2xl font-semibold tracking-normal text-foreground">
+            {continueLearning.topic}
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">{continueLearning.module}</p>
+          <Button className="mt-8 gap-2">
+            Resume
+            <ArrowRight className="size-4" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SemesterProgress({ progress }: { progress: DashboardData["semesterProgress"] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Semester Progress</CardTitle>
+        <CardDescription>Topic completion across the current semester.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="text-5xl font-semibold tracking-normal text-foreground">
+              {progress.percentage}%
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {progress.completedTopics} of {progress.totalTopics} topics completed
+            </p>
+          </div>
+        </div>
+        <Progress value={progress.percentage} className="mt-8" />
+      </CardContent>
+    </Card>
+  );
+}
+
+function QuickActions({ quickActions }: { quickActions: DashboardData["quickActions"] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Quick Actions</CardTitle>
+        <CardDescription>Move directly into the next academic workflow.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {quickActions.map((action, index) => {
+            const Icon = actionIcons[index];
+
+            return (
+              <Button
+                key={action.label}
+                asChild
+                variant="secondary"
+                className="h-14 justify-start gap-3 px-4"
+              >
+                <Link href={action.href}>
+                  <Icon className="size-4 text-primary" />
+                  {action.label}
+                </Link>
+              </Button>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
