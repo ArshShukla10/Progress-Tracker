@@ -195,12 +195,14 @@ export type LearningRevisionState = {
 export type LearningItemState = {
   status?: LearningStatus;
   confidence?: ConfidenceLevel;
+  bookmarked?: boolean;
   revision?: LearningRevisionState;
 };
 
 export type LearningWorkspaceState = {
   topics: Record<string, LearningItemState>;
   subtopics: Record<string, LearningItemState>;
+  practice: Record<string, LearningItemState>;
   notes: LearningNote[];
 };
 

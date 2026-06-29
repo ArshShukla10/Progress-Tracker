@@ -1,3 +1,8 @@
-import { semester3Subjects } from "@/data/semester3/subjects";
+import type { Subject } from "@/types/academic";
 
-export const javaSyllabus = semester3Subjects.find((subject) => subject.id === "java-programming");
+export const javaSyllabus: Subject = {
+  id: "java-programming",
+  name: "Java Programming",
+  semesterId: "semester-3",
+  modules: [],
+};

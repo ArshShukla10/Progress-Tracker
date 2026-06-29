@@ -35,8 +35,13 @@ export function RevisionPanel({
         <CardTitle>Revision</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
-          {topics.map((topic) => {
+        {topics.length === 0 ? (
+          <p className="rounded-md border border-border/70 bg-background/32 p-4 text-sm text-muted-foreground">
+            This topic has not been added yet.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {topics.map((topic) => {
             const revision = state.topics[topic.id]?.revision;
 
             return (
@@ -61,8 +66,9 @@ export function RevisionPanel({
                 </div>
               </div>
             );
-          })}
-        </div>
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

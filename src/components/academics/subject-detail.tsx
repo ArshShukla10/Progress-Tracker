@@ -26,9 +26,15 @@ export function SubjectDetail({ view }: SubjectDetailProps) {
         </CardContent>
       </Card>
       <div className="space-y-5">
-        {view.modules.map((subjectModule, index) => (
-          <ModuleCard key={subjectModule.id} module={subjectModule} index={index} />
-        ))}
+        {view.modules.length === 0 ? (
+          <div className="rounded-lg border border-border/80 bg-card/72 p-6 text-sm text-muted-foreground shadow-shell">
+            This topic has not been added yet.
+          </div>
+        ) : (
+          view.modules.map((subjectModule, index) => (
+            <ModuleCard key={subjectModule.id} module={subjectModule} index={index} />
+          ))
+        )}
       </div>
     </section>
   );

@@ -38,6 +38,7 @@ export function LearningWorkspace({ view }: LearningWorkspaceProps) {
             onTopicStatusChange={workspace.setTopicStatus}
             onSubtopicStatusChange={workspace.setSubtopicStatus}
             onConfidenceChange={workspace.setTopicConfidence}
+            onBookmarkToggle={workspace.toggleTopicBookmark}
           />
           <RevisionPanel
             topics={view.module.topics}
@@ -55,7 +56,11 @@ export function LearningWorkspace({ view }: LearningWorkspaceProps) {
             onDeleteNote={workspace.deleteNote}
           />
           <ResourcePanel module={view.module} />
-          <PracticePanel module={view.module} />
+          <PracticePanel
+            module={view.module}
+            state={workspace.state}
+            onPracticeStatusChange={workspace.setPracticeStatus}
+          />
         </div>
       </div>
     </motion.section>

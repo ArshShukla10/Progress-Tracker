@@ -114,8 +114,13 @@ function TodaysMission({
         <CardDescription>{mission.length} focused study tasks for this session.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
-          {mission.map((task) => {
+        {mission.length === 0 ? (
+          <p className="rounded-md border border-border/70 bg-background/32 p-4 text-sm text-muted-foreground">
+            Study tasks will appear here once official syllabus topics are added.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {mission.map((task) => {
             const checked = completedTasks.includes(task.id);
 
             return (
@@ -134,8 +139,9 @@ function TodaysMission({
                 </span>
               </label>
             );
-          })}
-        </div>
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -1,3 +1,8 @@
-import { semester3Subjects } from "@/data/semester3/subjects";
+import type { Subject } from "@/types/academic";
 
-export const dsaCodingSyllabus = semester3Subjects.find((subject) => subject.id === "dsa-coding");
+export const dsaCodingSyllabus: Subject = {
+  id: "dsa-coding",
+  name: "DSA Coding",
+  semesterId: "semester-3",
+  modules: [],
+};

@@ -8,12 +8,6 @@ import type {
   LearningWorkspaceState,
 } from "@/types/academic";
 
-const emptyWorkspaceState: LearningWorkspaceState = {
-  topics: {},
-  subtopics: {},
-  notes: [],
-};
-
 function getStorageKey(semesterId: string, subjectId: string, moduleId: string) {
   return `nexus.learning.${semesterId}.${subjectId}.${moduleId}`;
 }
@@ -23,10 +17,16 @@ function getWorkspaceState(
   subjectId: string,
   moduleId: string,
 ): LearningWorkspaceState {
-  return (
-    localStorageService.get<LearningWorkspaceState>(getStorageKey(semesterId, subjectId, moduleId)) ??
-    emptyWorkspaceState
+  const storedState = localStorageService.get<Partial<LearningWorkspaceState>>(
+    getStorageKey(semesterId, subjectId, moduleId),
   );
+
+  return {
+    topics: storedState?.topics ?? {},
+    subtopics: storedState?.subtopics ?? {},
+    practice: storedState?.practice ?? {},
+    notes: storedState?.notes ?? [],
+  };
 }
 
 function setWorkspaceState(
@@ -101,6 +101,43 @@ function setTopicConfidence(
       [topicId]: {
         ...state.topics[topicId],
         confidence,
+      },
+    },
+  }));
+}
+
+function toggleTopicBookmark(
+  semesterId: string,
+  subjectId: string,
+  moduleId: string,
+  topicId: string,
+) {
+  return updateWorkspaceState(semesterId, subjectId, moduleId, (state) => ({
+    ...state,
+    topics: {
+      ...state.topics,
+      [topicId]: {
+        ...state.topics[topicId],
+        bookmarked: !state.topics[topicId]?.bookmarked,
+      },
+    },
+  }));
+}
+
+function setPracticeStatus(
+  semesterId: string,
+  subjectId: string,
+  moduleId: string,
+  practiceId: string,
+  status: LearningStatus,
+) {
+  return updateWorkspaceState(semesterId, subjectId, moduleId, (state) => ({
+    ...state,
+    practice: {
+      ...state.practice,
+      [practiceId]: {
+        ...state.practice[practiceId],
+        status,
       },
     },
   }));
@@ -189,6 +226,8 @@ export const learningStorageService = {
   setTopicStatus,
   setSubtopicStatus,
   setTopicConfidence,
+  toggleTopicBookmark,
+  setPracticeStatus,
   setTopicRevision,
   createNote,
   updateNote,

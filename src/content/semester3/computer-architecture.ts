@@ -1,5 +1,8 @@
-import { semester3Subjects } from "@/data/semester3/subjects";
+import type { Subject } from "@/types/academic";
 
-export const computerArchitectureSyllabus = semester3Subjects.find(
-  (subject) => subject.id === "computer-architecture",
-);
+export const computerArchitectureSyllabus: Subject = {
+  id: "computer-architecture",
+  name: "Computer Architecture",
+  semesterId: "semester-3",
+  modules: [],
+};

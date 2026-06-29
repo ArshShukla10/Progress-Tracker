@@ -1,5 +1,7 @@
 "use client";
 
+import { Bookmark } from "lucide-react";
+
 import { ConfidenceRating } from "@/components/learning/confidence-rating";
 import { DifficultyBadge } from "@/components/learning/difficulty-badge";
 import { PriorityBadge } from "@/components/learning/priority-badge";
@@ -18,6 +20,7 @@ type TopicAccordionProps = {
   onTopicStatusChange: (topicId: string, status: LearningStatus) => void;
   onSubtopicStatusChange: (subtopicId: string, status: LearningStatus) => void;
   onConfidenceChange: (topicId: string, confidence: ConfidenceLevel) => void;
+  onBookmarkToggle: (topicId: string) => void;
 };
 
 function isCompletedStatus(status: LearningStatus) {
@@ -30,12 +33,25 @@ export function TopicAccordion({
   onTopicStatusChange,
   onSubtopicStatusChange,
   onConfidenceChange,
+  onBookmarkToggle,
 }: TopicAccordionProps) {
+  if (topics.length === 0) {
+    return (
+      <div
+        id="topics"
+        className="rounded-lg border border-border/80 bg-card/72 p-6 text-sm text-muted-foreground shadow-shell"
+      >
+        This topic has not been added yet.
+      </div>
+    );
+  }
+
   return (
     <div id="topics" className="space-y-4">
       {topics.map((topic) => {
         const status = state.topics[topic.id]?.status ?? topic.status;
         const confidence = state.topics[topic.id]?.confidence ?? topic.confidence;
+        const bookmarked = state.topics[topic.id]?.bookmarked ?? false;
         const completed = isCompletedStatus(status);
 
         return (
@@ -64,6 +80,14 @@ export function TopicAccordion({
                   </span>
                 </label>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <button
+                    type="button"
+                    className="inline-flex size-9 items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:text-primary"
+                    onClick={() => onBookmarkToggle(topic.id)}
+                    aria-label="Toggle bookmark"
+                  >
+                    <Bookmark className={bookmarked ? "size-4 fill-primary text-primary" : "size-4"} />
+                  </button>
                   <ConfidenceRating value={confidence} onChange={(value) => onConfidenceChange(topic.id, value)} />
                   <select
                     value={status}

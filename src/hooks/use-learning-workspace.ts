@@ -37,6 +37,7 @@ export function useLearningWorkspace(view: ModuleWorkspaceView) {
   const [state, setState] = useState<LearningWorkspaceState>({
     topics: {},
     subtopics: {},
+    practice: {},
     notes: [],
   });
 
@@ -115,6 +116,29 @@ export function useLearningWorkspace(view: ModuleWorkspaceView) {
         identity.moduleId,
         topicId,
         confidence,
+      ),
+    );
+  }
+
+  function toggleTopicBookmark(topicId: string) {
+    setState(
+      learningStorageService.toggleTopicBookmark(
+        identity.semesterId,
+        identity.subjectId,
+        identity.moduleId,
+        topicId,
+      ),
+    );
+  }
+
+  function setPracticeStatus(practiceId: string, status: LearningStatus) {
+    setState(
+      learningStorageService.setPracticeStatus(
+        identity.semesterId,
+        identity.subjectId,
+        identity.moduleId,
+        practiceId,
+        status,
       ),
     );
   }
@@ -203,6 +227,8 @@ export function useLearningWorkspace(view: ModuleWorkspaceView) {
     setTopicStatus,
     setSubtopicStatus,
     setTopicConfidence,
+    toggleTopicBookmark,
+    setPracticeStatus,
     markTopicForRevision,
     recordRevision,
     createNote,
