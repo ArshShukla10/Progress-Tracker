@@ -18,7 +18,8 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { academicService } from "@/services/academic-service";
 import { learningStorageService } from "@/services/learning-storage-service";
-import type { DashboardData } from "@/types/academic";
+import { skillService } from "@/services/skill-service";
+import type { DashboardData, SkillSummary } from "@/types/academic";
 
 const actionIcons = [BookOpen, NotebookText, CalendarDays, GraduationCap] as const;
 
@@ -82,6 +83,8 @@ export function HomeDashboard() {
         <SemesterProgress progress={dashboardData.semesterProgress} />
         <QuickActions quickActions={dashboardData.quickActions} />
       </div>
+
+      <SkillsSection skills={skillService.getAllSkills()} />
     </motion.section>
   );
 }
@@ -237,6 +240,43 @@ function QuickActions({ quickActions }: { quickActions: DashboardData["quickActi
                   {action.label}
                 </Link>
               </Button>
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function SkillsSection({ skills }: { skills: SkillSummary[] }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Skills</CardTitle>
+        <CardDescription>Long-term learning outside semester coursework.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {skills.map((skill) => {
+            const locked = skill.status === "locked";
+
+            return locked ? (
+              <div
+                key={skill.id}
+                className="rounded-md border border-border/70 bg-background/32 p-4 text-sm"
+              >
+                <p className="font-medium text-muted-foreground">{skill.name}</p>
+                <p className="mt-2 text-xs text-muted-foreground">Coming Soon</p>
+              </div>
+            ) : (
+              <Link
+                key={skill.id}
+                href={`/skills/${skill.id}`}
+                className="rounded-md border border-primary/30 bg-primary/10 p-4 text-sm transition-colors hover:border-primary/55"
+              >
+                <p className="font-medium text-foreground">{skill.name}</p>
+                <p className="mt-2 text-xs text-primary">Unlocked</p>
+              </Link>
             );
           })}
         </div>

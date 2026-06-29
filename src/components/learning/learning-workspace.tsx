@@ -13,6 +13,7 @@ import { RevisionPanel } from "@/components/learning/revision-panel";
 import { StudyChecklist } from "@/components/learning/study-checklist";
 import { TopicAccordion } from "@/components/learning/topic-accordion";
 import { useLearningWorkspace } from "@/hooks/use-learning-workspace";
+import { buildAcademicAiContext } from "@/services/ai/context-builder";
 import type { ModuleWorkspaceView } from "@/types/academic";
 
 type LearningWorkspaceProps = {
@@ -43,6 +44,9 @@ export function LearningWorkspace({ view }: LearningWorkspaceProps) {
             onSubtopicStatusChange={workspace.setSubtopicStatus}
             onConfidenceChange={workspace.setTopicConfidence}
             onBookmarkToggle={workspace.toggleTopicBookmark}
+            getAiContext={(topicId, subtopicId) =>
+              buildAcademicAiContext(view, topicId, subtopicId)
+            }
           />
           <RevisionPanel
             topics={view.module.topics}

@@ -2,6 +2,7 @@
 
 import { Bookmark } from "lucide-react";
 
+import { AiTopicPanel } from "@/components/ai/ai-topic-panel";
 import { ConfidenceRating } from "@/components/learning/confidence-rating";
 import { DifficultyBadge } from "@/components/learning/difficulty-badge";
 import { PriorityBadge } from "@/components/learning/priority-badge";
@@ -14,6 +15,7 @@ import type {
   LearningWorkspaceState,
   Topic,
 } from "@/types/academic";
+import type { AiContext } from "@/types/ai";
 
 type TopicAccordionProps = {
   topics: Topic[];
@@ -22,6 +24,7 @@ type TopicAccordionProps = {
   onSubtopicStatusChange: (subtopicId: string, status: LearningStatus) => void;
   onConfidenceChange: (topicId: string, confidence: ConfidenceLevel) => void;
   onBookmarkToggle: (topicId: string) => void;
+  getAiContext: (topicId: string, subtopicId?: string) => AiContext;
 };
 
 function isCompletedStatus(status: LearningStatus) {
@@ -48,6 +51,7 @@ export function TopicAccordion({
   onSubtopicStatusChange,
   onConfidenceChange,
   onBookmarkToggle,
+  getAiContext,
 }: TopicAccordionProps) {
   if (topics.length === 0) {
     return (
@@ -136,6 +140,9 @@ export function TopicAccordion({
                   onStatusChange={(nextStatus) => onSubtopicStatusChange(subtopic.id, nextStatus)}
                 />
               ))}
+            </div>
+            <div className="mt-5 border-t border-border/70 pt-5">
+              <AiTopicPanel context={getAiContext(topic.id)} />
             </div>
           </details>
         );

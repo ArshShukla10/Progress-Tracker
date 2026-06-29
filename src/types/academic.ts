@@ -240,3 +240,26 @@ export type ModuleWorkspaceView = {
   semesterProgress: Progress;
   statistics: LearningStatistics;
 };
+
+export type SkillStatus = "unlocked" | "locked";
+
+export type Skill = {
+  id: string;
+  name: string;
+  description?: string;
+  status: SkillStatus;
+  modules: Module[];
+};
+
+export type SkillSummary = {
+  id: string;
+  name: string;
+  description?: string;
+  status: SkillStatus;
+  progress: Progress;
+};
+
+export type SkillView = {
+  skill: Skill;
+  progress: Progress;
+};
