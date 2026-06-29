@@ -1,6 +1,6 @@
-import type { AiParsedResponse, AiResponseSection } from "@/types/ai";
+import type { AiParsedResponse, AiResponseMetadata, AiResponseSection } from "@/types/ai";
 
-export function parseAiResponse(raw: string): AiParsedResponse {
+export function parseAiResponse(raw: string, metadata?: AiResponseMetadata): AiParsedResponse {
   const lines = raw.split("\n").map((line) => line.trim()).filter(Boolean);
   const title = lines[0]?.replace(/^#+\s*/, "") ?? "AI Response";
   const sections: AiResponseSection[] = [];
@@ -38,5 +38,6 @@ export function parseAiResponse(raw: string): AiParsedResponse {
     title,
     sections: [{ type: "title", content: title }, ...sections],
     raw,
+    metadata,
   };
 }

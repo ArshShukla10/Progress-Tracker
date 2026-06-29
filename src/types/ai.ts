@@ -18,6 +18,11 @@ export type AiSettings = {
   provider: AiProviderId;
   geminiModel: string;
   apiKeys: Partial<Record<AiProviderId, string>>;
+  streaming: boolean;
+  markdown: boolean;
+  conversationMemory: boolean;
+  cache: boolean;
+  temperature: number;
 };
 
 export type AiContext = {
@@ -45,13 +50,50 @@ export type AiProviderRequest = {
   prompt: string;
   settings: AiSettings;
   messages?: AiMessage[];
+  signal?: AbortSignal;
 };
 
 export type AiProviderResponse = {
   content: string;
   model: string;
   provider: AiProviderId;
+  metadata?: AiResponseMetadata;
 };
+
+export type AiStreamChunk = {
+  content: string;
+  done?: boolean;
+  metadata?: AiResponseMetadata;
+};
+
+export type AiResponseMetadata = {
+  provider: AiProviderId;
+  model: string;
+  generationTimeMs?: number;
+  estimatedTokens?: number;
+  cached?: boolean;
+  generatedAt?: string;
+};
+
+export type AiErrorCode =
+  | "missing-api-key"
+  | "offline"
+  | "quota-exceeded"
+  | "rate-limited"
+  | "timeout"
+  | "malformed-response"
+  | "provider-failure"
+  | "unknown";
+
+export class AiServiceError extends Error {
+  code: AiErrorCode;
+
+  constructor(code: AiErrorCode, message: string) {
+    super(message);
+    this.name = "AiServiceError";
+    this.code = code;
+  }
+}
 
 export type AiResponseSection =
   | { type: "title"; content: string }
@@ -66,6 +108,7 @@ export type AiParsedResponse = {
   title: string;
   sections: AiResponseSection[];
   raw: string;
+  metadata?: AiResponseMetadata;
 };
 
 export type AiProvider = {
@@ -73,4 +116,16 @@ export type AiProvider = {
   label: string;
   disabled?: boolean;
   generate: (request: AiProviderRequest) => Promise<AiProviderResponse>;
+  stream?: (request: AiProviderRequest) => AsyncGenerator<AiStreamChunk>;
+};
+
+export type AiCacheEntry = {
+  key: string;
+  response: AiParsedResponse;
+  createdAt: string;
+};
+
+export type AiRunOptions = {
+  refresh?: boolean;
+  onChunk?: (content: string) => void;
 };

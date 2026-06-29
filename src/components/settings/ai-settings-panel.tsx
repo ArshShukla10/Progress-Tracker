@@ -76,6 +76,44 @@ export function AiSettingsPanel() {
             />
           </label>
 
+          <div className="grid gap-3 sm:grid-cols-2">
+            <ToggleField
+              label="Streaming"
+              checked={settings.streaming}
+              onChange={(checked) => setSettings({ ...settings, streaming: checked })}
+            />
+            <ToggleField
+              label="Markdown"
+              checked={settings.markdown}
+              onChange={(checked) => setSettings({ ...settings, markdown: checked })}
+            />
+            <ToggleField
+              label="Conversation Memory"
+              checked={settings.conversationMemory}
+              onChange={(checked) => setSettings({ ...settings, conversationMemory: checked })}
+            />
+            <ToggleField
+              label="Cache Responses"
+              checked={settings.cache}
+              onChange={(checked) => setSettings({ ...settings, cache: checked })}
+            />
+          </div>
+
+          <label className="block">
+            <span className="text-sm text-muted-foreground">Temperature</span>
+            <input
+              type="number"
+              min="0"
+              max="1"
+              step="0.1"
+              value={settings.temperature}
+              onChange={(event) =>
+                setSettings({ ...settings, temperature: Number(event.target.value) })
+              }
+              className="mt-2 h-10 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
+            />
+          </label>
+
           <div className="grid gap-3 sm:grid-cols-3">
             {providers
               .filter((provider) => provider.disabled)
@@ -95,5 +133,27 @@ export function AiSettingsPanel() {
         </CardContent>
       </Card>
     </section>
+  );
+}
+
+function ToggleField({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center justify-between rounded-md border border-border/70 bg-background/32 p-4 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+        className="size-4 accent-primary"
+      />
+    </label>
   );
 }

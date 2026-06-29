@@ -23,6 +23,13 @@ const promptTemplates: Record<AiActionId, string> = {
   ask: "Answer the student's question while preserving the learning context.",
 };
 
+const visualizationInstruction = [
+  "If a visual aid would genuinely improve the explanation, include one optional Mermaid block.",
+  "Use ```mermaid fences only for valid Mermaid syntax.",
+  "Prefer flowchart, graph, sequenceDiagram, classDiagram, stateDiagram, erDiagram, timeline, journey, pie, or gitGraph when appropriate.",
+  "Do not add a diagram when the answer is clearer as text.",
+].join("\n");
+
 export function buildPrompt(request: AiPromptRequest) {
   return [
     "You are NEXUS, a focused academic learning assistant.",
@@ -34,6 +41,9 @@ export function buildPrompt(request: AiPromptRequest) {
     "Task:",
     promptTemplates[request.action],
     request.question ? `\nStudent question:\n${request.question}` : "",
+    "",
+    "Visualization guidance:",
+    visualizationInstruction,
     "",
     "Return a structured, study-friendly answer.",
   ].join("\n");
