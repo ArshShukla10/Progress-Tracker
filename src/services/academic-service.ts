@@ -6,6 +6,7 @@ import type {
   ContinueLearningTarget,
   Module,
   ModuleSummary,
+  ModuleWorkspaceView,
   Progress,
   QuickAction,
   Resource,
@@ -75,7 +76,16 @@ function getModule(
   moduleId: string,
   semesterId = academicData.currentSemesterId,
 ): Module | undefined {
-  return getModules(subjectId, semesterId).find((module) => module.id === moduleId);
+  return getModules(subjectId, semesterId).find(
+    (module) => module.id === moduleId || getModuleRouteSegment(module) === moduleId,
+  );
+}
+
+function getModuleRouteSegment(subjectModule: Module): string {
+  const marker = "module-";
+  const markerIndex = subjectModule.id.indexOf(marker);
+
+  return markerIndex >= 0 ? subjectModule.id.slice(markerIndex) : subjectModule.id;
 }
 
 function getTopic(
@@ -85,6 +95,10 @@ function getTopic(
   semesterId = academicData.currentSemesterId,
 ): Topic | undefined {
   return getModule(subjectId, moduleId, semesterId)?.topics.find((topic) => topic.id === topicId);
+}
+
+function isCompletedStatus(status: Topic["status"]) {
+  return status === "completed" || status === "revised" || status === "mastered";
 }
 
 function getSubtopics(
@@ -112,7 +126,7 @@ function getResources(
 
 function calculateProgressFromTopics(topics: Topic[]): Progress {
   const totalTopics = topics.length;
-  const completedTopics = topics.filter((topic) => topic.status === "completed").length;
+  const completedTopics = topics.filter((topic) => isCompletedStatus(topic.status)).length;
   const percentage = totalTopics > 0 ? Math.round((completedTopics / totalTopics) * 100) : 0;
 
   return {
@@ -150,7 +164,7 @@ function calculateModuleProgress(
 
 function getCompletedModuleCount(subject: Subject): number {
   return subject.modules.filter((item) =>
-    item.topics.length > 0 && item.topics.every((topic) => topic.status === "completed"),
+    item.topics.length > 0 && item.topics.every((topic) => isCompletedStatus(topic.status)),
   ).length;
 }
 
@@ -194,7 +208,19 @@ function buildContinueLearningTarget(
   }
 
   return {
-    href: `/academics/${semesterId}/${subject.id}`,
+    href: `/academics/${semesterId}/${subject.id}/${getModuleRouteSegment(target.module)}`,
+    label,
+  };
+}
+
+function buildModuleTarget(
+  semesterId: string,
+  subjectId: string,
+  subjectModule: Module,
+  label = "Continue Module",
+): ContinueLearningTarget {
+  return {
+    href: `/academics/${semesterId}/${subjectId}/${getModuleRouteSegment(subjectModule)}`,
     label,
   };
 }
@@ -243,9 +269,61 @@ function getSubjectView(semesterId: string, subjectId: string): SubjectView | nu
       id: subjectModule.id,
       title: subjectModule.title,
       progress: calculateModuleProgress(subject.id, subjectModule.id, semester.id),
-      continueLearning: buildContinueLearningTarget(semester.id, subject, "Continue Module"),
+      continueLearning: buildModuleTarget(semester.id, subject.id, subjectModule),
       topics: subjectModule.topics,
     })),
+  };
+}
+
+function calculateEstimatedRemainingStudyTime(module: Module): number {
+  return module.topics.reduce((total, topic) => {
+    if (isCompletedStatus(topic.status)) {
+      return total;
+    }
+
+    const topicEstimate = topic.estimatedStudyTimeMinutes ?? 0;
+    const subtopicEstimate = topic.subtopics.reduce(
+      (subtopicTotal, subtopic) =>
+        subtopicTotal + (isCompletedStatus(subtopic.status) ? 0 : subtopic.estimatedStudyTimeMinutes ?? 0),
+      0,
+    );
+
+    return total + topicEstimate + subtopicEstimate;
+  }, 0);
+}
+
+function getModuleWorkspaceView(
+  semesterId: string,
+  subjectId: string,
+  moduleId: string,
+): ModuleWorkspaceView | null {
+  const semester = getSemester(semesterId);
+  const subject = getSubject(subjectId, semesterId);
+  const subjectModule = getModule(subjectId, moduleId, semesterId);
+
+  if (!semester || !subject || !subjectModule) {
+    return null;
+  }
+
+  const moduleProgress = calculateModuleProgress(subject.id, subjectModule.id, semester.id);
+  const subjectProgress = calculateSubjectProgress(subject.id, semester.id);
+  const semesterProgress = calculateSemesterProgress(semester.id);
+
+  return {
+    semester,
+    subject,
+    module: subjectModule,
+    moduleProgress,
+    subjectProgress,
+    semesterProgress,
+    statistics: {
+      topicsCompleted: moduleProgress.completedTopics,
+      topicsRemaining: moduleProgress.totalTopics - moduleProgress.completedTopics,
+      moduleCompletion: moduleProgress.percentage,
+      subjectCompletion: subjectProgress.percentage,
+      semesterCompletion: semesterProgress.percentage,
+      estimatedRemainingStudyTimeMinutes: calculateEstimatedRemainingStudyTime(subjectModule),
+    },
   };
 }
 
@@ -299,11 +377,13 @@ export const academicService = {
   getSubject,
   getModules,
   getModule,
+  getModuleRouteSegment,
   getTopic,
   getSubtopics,
   getResources,
   getSemesterView,
   getSubjectView,
+  getModuleWorkspaceView,
   getDashboardData,
   calculateSemesterProgress,
   calculateSubjectProgress,

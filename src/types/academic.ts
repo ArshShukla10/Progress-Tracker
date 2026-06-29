@@ -1,4 +1,12 @@
-export type CompletionStatus = "not-started" | "in-progress" | "completed";
+export type LearningStatus = "not-started" | "in-progress" | "completed" | "revised" | "mastered";
+
+export type CompletionStatus = LearningStatus;
+
+export type ConfidenceLevel = 1 | 2 | 3 | 4 | 5;
+
+export type Priority = "low" | "medium" | "high" | "exam-critical";
+
+export type Difficulty = "easy" | "medium" | "hard";
 
 export type Resource = {
   id: string;
@@ -19,12 +27,19 @@ export type Revision = {
   id: string;
   title: string;
   status: CompletionStatus;
+  revisionCount?: number;
+  lastRevisionDate?: string;
+  nextSuggestedRevision?: string;
 };
 
 export type Subtopic = {
   id: string;
   title: string;
   status: CompletionStatus;
+  confidence?: ConfidenceLevel;
+  difficulty?: Difficulty;
+  priority?: Priority;
+  estimatedStudyTimeMinutes?: number;
   resources: Resource[];
 };
 
@@ -32,6 +47,10 @@ export type Topic = {
   id: string;
   title: string;
   status: CompletionStatus;
+  confidence?: ConfidenceLevel;
+  difficulty?: Difficulty;
+  priority?: Priority;
+  estimatedStudyTimeMinutes?: number;
   subtopics: Subtopic[];
 };
 
@@ -39,6 +58,11 @@ export type Module = {
   id: string;
   title: string;
   description?: string;
+  estimatedStudyTimeMinutes?: number;
+  difficulty?: Difficulty;
+  marksWeightage?: string;
+  priority?: Priority;
+  practice?: PracticeItem[];
   topics: Topic[];
 };
 
@@ -78,6 +102,13 @@ export type Progress = {
   completedTopics: number;
   totalTopics: number;
   percentage: number;
+};
+
+export type PracticeItem = {
+  id: string;
+  title: string;
+  type: "practice-question" | "previous-year-question" | "coding-practice";
+  status: CompletionStatus;
 };
 
 export type QuickAction = {
@@ -144,4 +175,50 @@ export type SubjectView = {
   subject: Subject;
   progress: Progress;
   modules: ModuleSummary[];
+};
+
+export type LearningNote = {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LearningRevisionState = {
+  markedForRevision: boolean;
+  revisionCount: number;
+  lastRevisionDate: string | null;
+  nextSuggestedRevision: string | null;
+};
+
+export type LearningItemState = {
+  status?: LearningStatus;
+  confidence?: ConfidenceLevel;
+  revision?: LearningRevisionState;
+};
+
+export type LearningWorkspaceState = {
+  topics: Record<string, LearningItemState>;
+  subtopics: Record<string, LearningItemState>;
+  notes: LearningNote[];
+};
+
+export type LearningStatistics = {
+  topicsCompleted: number;
+  topicsRemaining: number;
+  moduleCompletion: number;
+  subjectCompletion: number;
+  semesterCompletion: number;
+  estimatedRemainingStudyTimeMinutes: number;
+};
+
+export type ModuleWorkspaceView = {
+  semester: Semester;
+  subject: Subject;
+  module: Module;
+  moduleProgress: Progress;
+  subjectProgress: Progress;
+  semesterProgress: Progress;
+  statistics: LearningStatistics;
 };
