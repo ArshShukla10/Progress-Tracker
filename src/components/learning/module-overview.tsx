@@ -47,13 +47,17 @@ export function ModuleOverview({ view, moduleCompletion }: ModuleOverviewProps) 
           <OverviewMetric label="Estimated Study Time" value={formatMinutes(view.module.estimatedStudyTimeMinutes)} />
           <OverviewMetric label="Marks Weightage" value={view.module.marksWeightage ?? "Not specified"} />
           <OverviewMetric label="Topics Count" value={String(view.module.topics.length)} />
+          <OverviewMetric
+            label="Module Progress"
+            value={`${view.moduleProgress.completedTopics} / ${view.moduleProgress.totalTopics} topics`}
+          />
           <div className="rounded-md border border-border/70 bg-background/32 p-4">
             <p className="text-xs text-muted-foreground">Difficulty</p>
             <div className="mt-3">
               <DifficultyBadge difficulty={view.module.difficulty} />
             </div>
           </div>
-          <div className="rounded-md border border-border/70 bg-background/32 p-4">
+          <div className="rounded-md border border-border/70 bg-background/32 p-4 sm:col-span-2 xl:col-span-1">
             <p className="text-xs text-muted-foreground">Priority</p>
             <div className="mt-3">
               <PriorityBadge priority={view.module.priority} />

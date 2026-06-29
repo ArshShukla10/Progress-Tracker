@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, BookOpen, CalendarDays, GraduationCap, NotebookText } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { academicService } from "@/services/academic-service";
+import { learningStorageService } from "@/services/learning-storage-service";
 import type { DashboardData } from "@/types/academic";
 
 const actionIcons = [BookOpen, NotebookText, CalendarDays, GraduationCap] as const;
@@ -39,6 +40,17 @@ export function HomeDashboard() {
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const greeting = useMemo(() => getGreeting(), []);
   const dashboardData = useMemo(() => academicService.getDashboardData(), []);
+  const [continueLearning, setContinueLearning] = useState(dashboardData.continueLearning);
+
+  useEffect(() => {
+    const lastVisited = academicService.resolveLearningLocation(
+      learningStorageService.getLastVisitedLocation(),
+    );
+
+    if (lastVisited) {
+      setContinueLearning(lastVisited);
+    }
+  }, []);
 
   function toggleTask(taskId: string) {
     setCompletedTasks((currentTasks) =>
@@ -63,7 +75,7 @@ export function HomeDashboard() {
           mission={dashboardData.mission}
           onToggleTask={toggleTask}
         />
-        <ContinueLearning continueLearning={dashboardData.continueLearning} />
+        <ContinueLearning continueLearning={continueLearning} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
@@ -165,9 +177,11 @@ function ContinueLearning({
             {continueLearning.topic}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">{continueLearning.module}</p>
-          <Button className="mt-8 gap-2">
-            Resume
-            <ArrowRight className="size-4" />
+          <Button asChild className="mt-8 gap-2">
+            <Link href={continueLearning.href ?? "/academics"}>
+              Resume
+              <ArrowRight className="size-4" />
+            </Link>
           </Button>
         </div>
       </CardContent>

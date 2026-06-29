@@ -2,14 +2,28 @@ import { localStorageService } from "@/lib/storage/local-storage";
 import type {
   ConfidenceLevel,
   LearningItemState,
+  LastVisitedLearningLocation,
   LearningNote,
   LearningRevisionState,
   LearningStatus,
   LearningWorkspaceState,
 } from "@/types/academic";
 
+const lastVisitedKey = "nexus.learning.lastVisited";
+
 function getStorageKey(semesterId: string, subjectId: string, moduleId: string) {
   return `nexus.learning.${semesterId}.${subjectId}.${moduleId}`;
+}
+
+function getLastVisitedLocation() {
+  return localStorageService.get<LastVisitedLearningLocation>(lastVisitedKey);
+}
+
+function setLastVisitedLocation(location: Omit<LastVisitedLearningLocation, "updatedAt">) {
+  localStorageService.set<LastVisitedLearningLocation>(lastVisitedKey, {
+    ...location,
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 function getWorkspaceState(
@@ -221,6 +235,8 @@ function getItemState(record: Record<string, LearningItemState>, id: string) {
 }
 
 export const learningStorageService = {
+  getLastVisitedLocation,
+  setLastVisitedLocation,
   getWorkspaceState,
   setWorkspaceState,
   setTopicStatus,

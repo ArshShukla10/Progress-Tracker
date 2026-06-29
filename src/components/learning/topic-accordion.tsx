@@ -7,6 +7,7 @@ import { DifficultyBadge } from "@/components/learning/difficulty-badge";
 import { PriorityBadge } from "@/components/learning/priority-badge";
 import { SubtopicCard } from "@/components/learning/subtopic-card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import type {
   ConfidenceLevel,
   LearningStatus,
@@ -25,6 +26,19 @@ type TopicAccordionProps = {
 
 function isCompletedStatus(status: LearningStatus) {
   return status === "completed" || status === "revised" || status === "mastered";
+}
+
+function getTopicSubtopicProgress(topic: Topic, state: LearningWorkspaceState) {
+  const total = topic.subtopics.length;
+  const completed = topic.subtopics.filter((subtopic) =>
+    isCompletedStatus(state.subtopics[subtopic.id]?.status ?? subtopic.status),
+  ).length;
+
+  return {
+    completed,
+    total,
+    percentage: total > 0 ? Math.round((completed / total) * 100) : isCompletedStatus(state.topics[topic.id]?.status ?? topic.status) ? 100 : 0,
+  };
 }
 
 export function TopicAccordion({
@@ -53,6 +67,7 @@ export function TopicAccordion({
         const confidence = state.topics[topic.id]?.confidence ?? topic.confidence;
         const bookmarked = state.topics[topic.id]?.bookmarked ?? false;
         const completed = isCompletedStatus(status);
+        const subtopicProgress = getTopicSubtopicProgress(topic, state);
 
         return (
           <details
@@ -101,6 +116,15 @@ export function TopicAccordion({
                     <option value="mastered">Mastered</option>
                   </select>
                 </div>
+              </div>
+              <div className="mt-5">
+                <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Topic progress</span>
+                  <span>
+                    {subtopicProgress.completed} / {subtopicProgress.total} subtopics
+                  </span>
+                </div>
+                <Progress value={subtopicProgress.percentage} className="h-2" />
               </div>
             </summary>
             <div className="mt-5 space-y-3 border-t border-border/70 pt-5">

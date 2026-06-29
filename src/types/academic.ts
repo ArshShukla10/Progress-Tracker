@@ -126,6 +126,7 @@ export type DashboardData = {
     subject: string;
     module: string;
     topic: string;
+    href?: string;
   };
   semesterProgress: Progress;
   quickActions: QuickAction[];
@@ -206,6 +207,15 @@ export type LearningWorkspaceState = {
   notes: LearningNote[];
 };
 
+export type LastVisitedLearningLocation = {
+  semesterId: string;
+  subjectId: string;
+  moduleId: string;
+  topicId?: string;
+  subtopicId?: string;
+  updatedAt: string;
+};
+
 export type LearningStatistics = {
   topicsCompleted: number;
   topicsRemaining: number;
@@ -219,6 +229,12 @@ export type ModuleWorkspaceView = {
   semester: Semester;
   subject: Subject;
   module: Module;
+  breadcrumbs: ContinueLearningTarget[];
+  moduleNavigation: {
+    modules: ContinueLearningTarget[];
+    previous: ContinueLearningTarget | null;
+    next: ContinueLearningTarget | null;
+  };
   moduleProgress: Progress;
   subjectProgress: Progress;
   semesterProgress: Progress;

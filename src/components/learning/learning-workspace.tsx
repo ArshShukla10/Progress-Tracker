@@ -2,7 +2,9 @@
 
 import { motion } from "framer-motion";
 
+import { LearningBreadcrumbs } from "@/components/learning/learning-breadcrumbs";
 import { LearningStatistics } from "@/components/learning/learning-statistics";
+import { ModuleNavigator } from "@/components/learning/module-navigator";
 import { ModuleOverview } from "@/components/learning/module-overview";
 import { NotesPanel } from "@/components/learning/notes-panel";
 import { PracticePanel } from "@/components/learning/practice-panel";
@@ -27,6 +29,8 @@ export function LearningWorkspace({ view }: LearningWorkspaceProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
     >
+      <LearningBreadcrumbs items={view.breadcrumbs} />
+      <ModuleNavigator view={view} />
       <ModuleOverview view={view} moduleCompletion={workspace.statistics.moduleCompletion} />
       <LearningStatistics statistics={workspace.statistics} />
 

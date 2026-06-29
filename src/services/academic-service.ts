@@ -4,6 +4,7 @@ import type {
   ContinueLearning,
   DashboardData,
   ContinueLearningTarget,
+  LastVisitedLearningLocation,
   Module,
   ModuleSummary,
   ModuleWorkspaceView,
@@ -220,9 +221,13 @@ function buildModuleTarget(
   label = "Continue Module",
 ): ContinueLearningTarget {
   return {
-    href: `/academics/${semesterId}/${subjectId}/${getModuleRouteSegment(subjectModule)}`,
+    href: getModuleHref(semesterId, subjectId, subjectModule),
     label,
   };
+}
+
+function getModuleHref(semesterId: string, subjectId: string, subjectModule: Module) {
+  return `/academics/${semesterId}/${subjectId}/${getModuleRouteSegment(subjectModule)}`;
 }
 
 function getSubjectLastStudied(subjectId: string, semesterId: string): string {
@@ -308,11 +313,37 @@ function getModuleWorkspaceView(
   const moduleProgress = calculateModuleProgress(subject.id, subjectModule.id, semester.id);
   const subjectProgress = calculateSubjectProgress(subject.id, semester.id);
   const semesterProgress = calculateSemesterProgress(semester.id);
+  const moduleIndex = subject.modules.findIndex((item) => item.id === subjectModule.id);
+  const previousModule = moduleIndex > 0 ? subject.modules[moduleIndex - 1] : null;
+  const nextModule = moduleIndex < subject.modules.length - 1 ? subject.modules[moduleIndex + 1] : null;
 
   return {
     semester,
     subject,
     module: subjectModule,
+    breadcrumbs: [
+      { label: semester.title, href: `/academics/${semester.id}` },
+      { label: subject.name, href: `/academics/${semester.id}/${subject.id}` },
+      { label: subjectModule.title, href: getModuleHref(semester.id, subject.id, subjectModule) },
+    ],
+    moduleNavigation: {
+      modules: subject.modules.map((item) => ({
+        label: item.title,
+        href: getModuleHref(semester.id, subject.id, item),
+      })),
+      previous: previousModule
+        ? {
+            label: previousModule.title,
+            href: getModuleHref(semester.id, subject.id, previousModule),
+          }
+        : null,
+      next: nextModule
+        ? {
+            label: nextModule.title,
+            href: getModuleHref(semester.id, subject.id, nextModule),
+          }
+        : null,
+    },
     moduleProgress,
     subjectProgress,
     semesterProgress,
@@ -327,6 +358,31 @@ function getModuleWorkspaceView(
   };
 }
 
+function resolveLearningLocation(
+  location: LastVisitedLearningLocation | null,
+): DashboardData["continueLearning"] | null {
+  if (!location) {
+    return null;
+  }
+
+  const subject = getSubject(location.subjectId, location.semesterId);
+  const subjectModule = getModule(location.subjectId, location.moduleId, location.semesterId);
+  const topic = location.topicId
+    ? getTopic(location.subjectId, location.moduleId, location.topicId, location.semesterId)
+    : undefined;
+
+  if (!subject || !subjectModule) {
+    return null;
+  }
+
+  return {
+    subject: subject.name,
+    module: subjectModule.title,
+    topic: topic?.title ?? "Module workspace",
+    href: getModuleHref(location.semesterId, subject.id, subjectModule),
+  };
+}
+
 function resolveContinueLearning(
   continueLearning: ContinueLearning | null,
   semesterId = academicData.currentSemesterId,
@@ -336,6 +392,7 @@ function resolveContinueLearning(
       subject: "No subject selected",
       module: "No module selected",
       topic: "No topic selected",
+      href: routes.academics,
     };
   }
 
@@ -347,6 +404,7 @@ function resolveContinueLearning(
     subject: subject?.name ?? "Unknown subject",
     module: learningModule?.title ?? "Unknown module",
     topic: topic?.title ?? "Unknown topic",
+    href: subject && learningModule ? getModuleHref(semesterId, subject.id, learningModule) : routes.academics,
   };
 }
 
@@ -384,6 +442,7 @@ export const academicService = {
   getSemesterView,
   getSubjectView,
   getModuleWorkspaceView,
+  resolveLearningLocation,
   getDashboardData,
   calculateSemesterProgress,
   calculateSubjectProgress,

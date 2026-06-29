@@ -28,11 +28,14 @@ function addDays(date: Date, days: number) {
 }
 
 export function useLearningWorkspace(view: ModuleWorkspaceView) {
-  const identity: WorkspaceIdentity = {
-    semesterId: view.semester.id,
-    subjectId: view.subject.id,
-    moduleId: view.module.id,
-  };
+  const identity: WorkspaceIdentity = useMemo(
+    () => ({
+      semesterId: view.semester.id,
+      subjectId: view.subject.id,
+      moduleId: view.module.id,
+    }),
+    [view.module.id, view.semester.id, view.subject.id],
+  );
 
   const [state, setState] = useState<LearningWorkspaceState>({
     topics: {},
@@ -49,7 +52,8 @@ export function useLearningWorkspace(view: ModuleWorkspaceView) {
         identity.moduleId,
       ),
     );
-  }, [identity.moduleId, identity.semesterId, identity.subjectId]);
+    learningStorageService.setLastVisitedLocation(identity);
+  }, [identity]);
 
   const statistics = useMemo(() => {
     const completedTopics = view.module.topics.filter((topic) => {
@@ -85,6 +89,7 @@ export function useLearningWorkspace(view: ModuleWorkspaceView) {
   }, [state.subtopics, state.topics, view.module.topics, view.statistics]);
 
   function setTopicStatus(topicId: string, status: LearningStatus) {
+    learningStorageService.setLastVisitedLocation({ ...identity, topicId });
     setState(
       learningStorageService.setTopicStatus(
         identity.semesterId,
@@ -97,6 +102,10 @@ export function useLearningWorkspace(view: ModuleWorkspaceView) {
   }
 
   function setSubtopicStatus(subtopicId: string, status: LearningStatus) {
+    const topicId = view.module.topics.find((topic) =>
+      topic.subtopics.some((subtopic) => subtopic.id === subtopicId),
+    )?.id;
+    learningStorageService.setLastVisitedLocation({ ...identity, topicId, subtopicId });
     setState(
       learningStorageService.setSubtopicStatus(
         identity.semesterId,
@@ -109,6 +118,7 @@ export function useLearningWorkspace(view: ModuleWorkspaceView) {
   }
 
   function setTopicConfidence(topicId: string, confidence: ConfidenceLevel) {
+    learningStorageService.setLastVisitedLocation({ ...identity, topicId });
     setState(
       learningStorageService.setTopicConfidence(
         identity.semesterId,
@@ -121,6 +131,7 @@ export function useLearningWorkspace(view: ModuleWorkspaceView) {
   }
 
   function toggleTopicBookmark(topicId: string) {
+    learningStorageService.setLastVisitedLocation({ ...identity, topicId });
     setState(
       learningStorageService.toggleTopicBookmark(
         identity.semesterId,
