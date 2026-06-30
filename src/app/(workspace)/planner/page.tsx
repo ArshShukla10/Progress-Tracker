@@ -1,5 +1,5 @@
-import { PageContainer } from "@/components/layout/page-container";
+import { PlannerWorkspace } from "@/components/planner/planner-workspace/planner-workspace";
 
 export default function PlannerPage() {
-  return <PageContainer />;
+  return <PlannerWorkspace />;
 }

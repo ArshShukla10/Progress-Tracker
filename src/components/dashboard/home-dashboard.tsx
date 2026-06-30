@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, BookOpen, CalendarDays, GraduationCap, NotebookText } from "lucide-react";
+import { ArrowRight, BookOpen, CalendarDays, GraduationCap, NotebookText, Target } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -18,8 +18,11 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { academicService } from "@/services/academic-service";
 import { learningStorageService } from "@/services/learning-storage-service";
+import { plannerService } from "@/services/planner/planner-service";
+import { timeEstimationService } from "@/services/planner/time-estimation-service";
 import { skillService } from "@/services/skill-service";
 import type { DashboardData, SkillSummary } from "@/types/academic";
+import type { PlannerDashboardData } from "@/types/planner";
 
 const actionIcons = [BookOpen, NotebookText, CalendarDays, GraduationCap] as const;
 
@@ -41,6 +44,7 @@ export function HomeDashboard() {
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const greeting = useMemo(() => getGreeting(), []);
   const dashboardData = useMemo(() => academicService.getDashboardData(), []);
+  const plannerData = useMemo(() => plannerService.getDashboardData(), []);
   const [continueLearning, setContinueLearning] = useState(dashboardData.continueLearning);
 
   useEffect(() => {
@@ -85,6 +89,8 @@ export function HomeDashboard() {
       </div>
 
       <SkillsSection skills={skillService.getAllSkills()} />
+
+      <PlannerSummary planner={plannerData} />
     </motion.section>
   );
 }
@@ -279,6 +285,50 @@ function SkillsSection({ skills }: { skills: SkillSummary[] }) {
               </Link>
             );
           })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function PlannerSummary({ planner }: { planner: PlannerDashboardData }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Today&apos;s Plan</CardTitle>
+        <CardDescription>A compact plan generated from your current progress.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
+          <div className="rounded-md border border-border/70 bg-background/32 p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-md border border-primary/30 bg-primary/10 text-primary">
+                <Target className="size-4" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Today&apos;s Focus</p>
+                <p className="font-medium text-foreground">{planner.summary.todaysFocus}</p>
+              </div>
+            </div>
+            <p className="mt-5 text-sm text-muted-foreground">
+              {timeEstimationService.formatMinutes(planner.summary.remainingStudyTimeMinutes)} remaining
+              across the current semester.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {planner.schedule.daily.slice(0, 4).map((task) => (
+              <Link
+                key={task.id}
+                href={task.href ?? "/planner"}
+                className="rounded-md border border-border/70 bg-background/32 p-4 transition-colors hover:border-primary/45"
+              >
+                <p className="truncate text-sm font-medium text-foreground">{task.title}</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {task.subject} / {task.estimatedMinutes}m
+                </p>
+              </Link>
+            ))}
+          </div>
         </div>
       </CardContent>
     </Card>
