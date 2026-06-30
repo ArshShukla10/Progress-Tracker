@@ -87,7 +87,7 @@ export function getVisualizationKind(value: string): VisualizationKind {
 }
 
 export function normalizeMermaid(mermaid: string, requestedType?: string) {
-  const trimmed = mermaid.trim();
+  const trimmed = repairMermaidSyntax(mermaid);
   const existingType = getMermaidType(trimmed);
 
   if (existingType) {
@@ -106,6 +106,26 @@ export function normalizeMermaid(mermaid: string, requestedType?: string) {
     mermaidType,
     kind,
   };
+}
+
+export function repairMermaidSyntax(mermaid: string) {
+  const lines = mermaid
+    .trim()
+    .split("\n")
+    .map((line) => line.trimEnd())
+    .filter((line) => line.trim().length > 0);
+
+  if (lines.length === 0) {
+    return "";
+  }
+
+  const firstLine = lines[0].trim();
+
+  if (firstLine === "flowchart" || firstLine === "graph") {
+    lines[0] = `${firstLine} TD`;
+  }
+
+  return lines.join("\n");
 }
 
 export function buildVisualizationModel({

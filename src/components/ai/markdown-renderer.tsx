@@ -36,7 +36,31 @@ const supportedLanguages = new Set([
   "css",
   "json",
   "markdown",
+  "mermaid",
 ]);
+
+const keywordPattern =
+  /\b(function|const|let|var|return|class|extends|implements|public|private|protected|if|else|for|while|switch|case|break|import|from|export|type|interface|new|try|catch|async|await|SELECT|FROM|WHERE|JOIN|INSERT|UPDATE|DELETE|CREATE|TABLE|PRIMARY|KEY|public|static|void|int|float|double|char|boolean|String)\b/;
+
+function renderHighlightedCode(content: string) {
+  return content.split("\n").map((line, lineIndex) => {
+    const parts = line.split(keywordPattern).filter((part) => part.length > 0);
+
+    return (
+      <span key={`line-${lineIndex}`} className="block">
+        {parts.map((part, partIndex) =>
+          keywordPattern.test(part) ? (
+            <span key={`part-${partIndex}`} className="text-primary">
+              {part}
+            </span>
+          ) : (
+            <span key={`part-${partIndex}`}>{part}</span>
+          ),
+        )}
+      </span>
+    );
+  });
+}
 
 function splitCodeBlocks(content: string): MarkdownBlock[] {
   const blocks: MarkdownBlock[] = [];
@@ -323,7 +347,7 @@ function CodeBlockView({ language, content }: CodeBlock) {
         </Button>
       </div>
       <pre className="overflow-x-auto p-4 text-xs leading-6 text-foreground">
-        <code data-language={normalizedLanguage}>{content}</code>
+        <code data-language={normalizedLanguage}>{renderHighlightedCode(content)}</code>
       </pre>
     </div>
   );

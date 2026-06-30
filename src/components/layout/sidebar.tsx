@@ -1,4 +1,4 @@
-import { BookOpen, Brain, CalendarDays, Home, Library, Settings2 } from "lucide-react";
+import { BarChart3, BookOpen, Brain, CalendarDays, Home, Library, Settings2 } from "lucide-react";
 
 import { appConfig } from "@/config/app";
 import { routes } from "@/constants/routes";
@@ -9,6 +9,7 @@ const sidebarItems: NavigationItem[] = [
   { label: "Dashboard", href: routes.home, icon: Home, active: true },
   { label: "Academics", href: routes.academics, icon: BookOpen },
   { label: "Skills", href: routes.skills, icon: Brain },
+  { label: "Analytics", href: routes.analytics, icon: BarChart3 },
   { label: "Knowledge", href: routes.knowledge, icon: Library },
   { label: "Planner", href: routes.planner, icon: CalendarDays },
   { label: "Settings", href: routes.settings, icon: Settings2 },

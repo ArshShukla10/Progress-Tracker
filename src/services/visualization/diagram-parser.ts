@@ -9,8 +9,8 @@ import type {
 
 function parseJsonVisualization(content: string): StructuredVisualizationInput | null {
   try {
-    const parsed = JSON.parse(content) as StructuredVisualizationInput;
-    return parsed;
+    const parsed = JSON.parse(content) as StructuredVisualizationInput | StructuredVisualizationInput[];
+    return Array.isArray(parsed) ? parsed[0] ?? null : parsed;
   } catch {
     return null;
   }
@@ -74,7 +74,7 @@ export function parseVisualizations(content: string): VisualizationParseResult {
     const body = match[2] ?? "";
     const index = visualizations.length;
 
-    if (language === "mermaid") {
+    if (["mermaid", "mmd", "mermaidjs"].includes(language)) {
       const model = buildVisualizationModel({
         input: {
           mermaid: body,
@@ -95,7 +95,7 @@ export function parseVisualizations(content: string): VisualizationParseResult {
         ? buildVisualizationModel({ input, index, source: "structured" })
         : null;
 
-      if (model) {
+      if (model && !visualizations.some((item) => item.mermaid === model.mermaid)) {
         visualizations.push(model);
       } else {
         warnings.push("A visualization block was found but could not be parsed.");

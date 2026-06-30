@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { DiagramCard } from "@/components/visualization/diagram-card";
 import type { VisualizationModel } from "@/types/visualization";
@@ -16,6 +16,7 @@ export function DiagramView({ visualization, onRegenerate }: DiagramViewProps) {
   const [visible, setVisible] = useState(false);
   const [svg, setSvg] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const mermaidSource = useMemo(() => visualization.mermaid.trim(), [visualization.mermaid]);
 
   useEffect(() => {
     const element = containerRef.current;
@@ -57,9 +58,10 @@ export function DiagramView({ visualization, onRegenerate }: DiagramViewProps) {
           fontFamily: "Inter, ui-sans-serif, system-ui",
         });
 
+        await mermaid.parse(mermaidSource);
         const result = await mermaid.render(
           `nexus-diagram-${reactId.replace(/[^a-zA-Z0-9]/g, "")}-${visualization.id}`,
-          visualization.mermaid,
+          mermaidSource,
         );
 
         if (!cancelled) {
@@ -77,7 +79,7 @@ export function DiagramView({ visualization, onRegenerate }: DiagramViewProps) {
     return () => {
       cancelled = true;
     };
-  }, [reactId, visible, visualization]);
+  }, [mermaidSource, reactId, visible, visualization.id]);
 
   return (
     <DiagramCard visualization={visualization} svg={svg} onRegenerate={onRegenerate}>
