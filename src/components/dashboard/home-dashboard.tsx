@@ -2,38 +2,50 @@
 
 import { motion } from "framer-motion";
 import {
-  ArrowRight,
+  ArrowUp,
   BookOpen,
   CalendarDays,
-  GraduationCap,
-  Library,
-  NotebookText,
+  CheckCircle2,
+  ChevronRight,
+  CircleDotDashed,
+  Clock3,
+  FileQuestion,
+  FileText,
+  Flame,
+  Layers,
+  MessageSquareText,
+  MoreHorizontal,
+  PenLine,
+  Sparkles,
   Target,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
-import { academicService } from "@/services/academic-service";
-import { learningStorageService } from "@/services/learning-storage-service";
+import { analyticsService } from "@/services/analytics/analytics-service";
+import { gamificationService } from "@/services/gamification/gamification-service";
 import { learningService } from "@/services/learning/learning-service";
 import { plannerService } from "@/services/planner/planner-service";
-import { timeEstimationService } from "@/services/planner/time-estimation-service";
-import { skillService } from "@/services/skill-service";
-import type { DashboardData, SkillSummary } from "@/types/academic";
+import type { AnalyticsProgressItem } from "@/types/analytics";
 import type { PlannerDashboardData } from "@/types/planner";
 
-const actionIcons = [BookOpen, NotebookText, CalendarDays, GraduationCap] as const;
+const quickActions = [
+  { label: "Ask AI", href: "/knowledge", icon: Sparkles, color: "text-[#7C3AED]" },
+  { label: "Create Note", href: "/knowledge", icon: PenLine, color: "text-[#22C55E]" },
+  { label: "Solve PYQs", href: "/knowledge", icon: FileQuestion, color: "text-[#3B82F6]" },
+  { label: "Flashcards", href: "/knowledge", icon: Layers, color: "text-[#F59E0B]" },
+  { label: "Revision Queue", href: "/knowledge", icon: FileText, color: "text-[#EF4444]" },
+  { label: "Interview Prep", href: "/knowledge", icon: MessageSquareText, color: "text-[#7C3AED]" },
+];
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -49,23 +61,19 @@ function getGreeting() {
   return "Good evening";
 }
 
+function getMetricValue(metrics: ReturnType<typeof analyticsService.getDashboardData>["metrics"], id: string) {
+  return metrics.find((metric) => metric.id === id)?.value ?? "0";
+}
+
 export function HomeDashboard() {
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
-  const greeting = useMemo(() => getGreeting(), []);
-  const dashboardData = useMemo(() => academicService.getDashboardData(), []);
-  const plannerData = useMemo(() => plannerService.getDashboardData(), []);
+  const analytics = useMemo(() => analyticsService.getDashboardData(), []);
+  const gamification = useMemo(() => gamificationService.getDashboardData(analytics), [analytics]);
+  const planner = useMemo(() => plannerService.getDashboardData(analytics), [analytics]);
   const learningStats = useMemo(() => learningService.getStats(), []);
-  const [continueLearning, setContinueLearning] = useState(dashboardData.continueLearning);
-
-  useEffect(() => {
-    const lastVisited = academicService.resolveLearningLocation(
-      learningStorageService.getLastVisitedLocation(),
-    );
-
-    if (lastVisited) {
-      setContinueLearning(lastVisited);
-    }
-  }, []);
+  const greeting = useMemo(() => getGreeting(), []);
+  const todaysTasks = planner.schedule.daily.slice(0, 4);
+  const tasksDone = completedTasks.length;
 
   function toggleTask(taskId: string) {
     setCompletedTasks((currentTasks) =>
@@ -77,237 +85,262 @@ export function HomeDashboard() {
 
   return (
     <motion.section
-      className="mx-auto flex w-full max-w-7xl flex-col gap-8"
-      initial={{ opacity: 0, y: 16 }}
+      className="mx-auto flex w-full max-w-[1400px] flex-col gap-6"
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
     >
-      <GreetingSection greeting={greeting} profile={dashboardData.profile} />
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-[32px] font-semibold tracking-[-0.02em] text-foreground md:text-[34px]">
+            {greeting}, Arsh 👋
+          </h1>
+          <p className="mt-2 text-[15px] text-muted-foreground">
+            Stay consistent. Progress today, success tomorrow.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="mt-1 hidden size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground md:flex"
+          aria-label="Dashboard options"
+        >
+          <MoreHorizontal className="size-5" />
+        </button>
+      </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <TodaysMission
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <MetricCard
+          icon={CircleDotDashed}
+          iconClassName="bg-[#F3E8FF] text-[#7C3AED]"
+          label="Study Streak"
+          value={`${gamification.streak.currentStreak} days`}
+          trend="2 days"
+          trendClassName="bg-[#F3E8FF] text-[#7C3AED]"
+        />
+        <MetricCard
+          icon={Zap}
+          iconClassName="bg-[#DCFCE7] text-[#22C55E]"
+          label="XP Today"
+          value={`${gamification.xp}`}
+          suffix="XP"
+          trend="18%"
+          trendClassName="bg-[#DCFCE7] text-[#16A34A]"
+        />
+        <MetricCard
+          icon={Flame}
+          iconClassName="bg-[#FFF7ED] text-[#F97316]"
+          label="Level"
+          value={`Level ${gamification.level.currentLevel.level}`}
+          detail={`${gamification.xp.toLocaleString()} / ${gamification.level.nextLevel?.minimumXp.toLocaleString() ?? gamification.xp.toLocaleString()} XP`}
+          progress={gamification.level.progressPercentage}
+        />
+        <MetricCard
+          icon={Clock3}
+          iconClassName="bg-[#DBEAFE] text-[#3B82F6]"
+          label="Study Time"
+          value={getMetricValue(analytics.metrics, "study-time")}
+          trend="12% vs yesterday"
+          trendClassName="bg-[#DBEAFE] text-[#2563EB]"
+        />
+        <MetricCard
+          icon={CheckCircle2}
+          iconClassName="bg-[#FFE4E6] text-[#EF4444]"
+          label="Tasks Done"
+          value={`${tasksDone} / ${Math.max(todaysTasks.length, 1)}`}
+          trend="64%"
+          trendClassName="bg-[#FFE4E6] text-[#E11D48]"
+        />
+      </div>
+
+      <div className="grid gap-5 xl:grid-cols-[1.08fr_1fr_1fr]">
+        <TodaysPlanCard
+          planner={planner}
           completedTasks={completedTasks}
-          mission={dashboardData.mission}
           onToggleTask={toggleTask}
         />
-        <ContinueLearning continueLearning={continueLearning} />
+        <UpcomingCard planner={planner} learningStats={learningStats} />
+        <AiSuggestionsCard analytics={analytics} />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-        <SemesterProgress progress={dashboardData.semesterProgress} />
-        <QuickActions quickActions={dashboardData.quickActions} />
+      <div className="grid gap-5 xl:grid-cols-[1.08fr_1fr_1fr]">
+        <RecentSubjectsCard subjects={analytics.subjectProgress} />
+        <LearningProgressCard />
+        <QuickActionsCard />
       </div>
-
-      <SkillsSection skills={skillService.getAllSkills()} />
-
-      <LearningIntelligenceSummary stats={learningStats} />
-
-      <PlannerSummary planner={plannerData} />
     </motion.section>
   );
 }
 
-function LearningIntelligenceSummary({
-  stats,
-}: {
-  stats: ReturnType<typeof learningService.getStats>;
-}) {
+type MetricCardProps = {
+  icon: React.ComponentType<{ className?: string }>;
+  iconClassName: string;
+  label: string;
+  value: string;
+  suffix?: string;
+  detail?: string;
+  trend?: string;
+  trendClassName?: string;
+  progress?: number;
+};
+
+function MetricCard({
+  icon: Icon,
+  iconClassName,
+  label,
+  value,
+  suffix,
+  detail,
+  trend,
+  trendClassName,
+  progress,
+}: MetricCardProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Learning Intelligence</CardTitle>
-        <CardDescription>Notes, PYQs, revision, flashcards, interviews, and bookmarks.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
-          <div className="rounded-md border border-border/70 bg-background/32 p-5">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-md border border-primary/30 bg-primary/10 text-primary">
-                <Library className="size-4" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Unified Workspace</p>
-                <p className="font-medium text-foreground">Ready for real content</p>
-              </div>
-            </div>
-            <Button asChild variant="secondary" className="mt-5">
-              <Link href="/knowledge">Open Workspace</Link>
-            </Button>
+    <Card className="min-h-[145px]">
+      <CardContent className="flex h-full flex-col justify-between p-5">
+        <div className="flex items-start gap-4">
+          <div className={`flex size-11 shrink-0 items-center justify-center rounded-full ${iconClassName}`}>
+            <Icon className="size-5" />
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <LearningStat label="Recent Notes" value={stats.notesCount} />
-            <LearningStat label="Today's Revision" value={stats.revisionDue} />
-            <LearningStat label="Pending PYQs" value={stats.pyqsPending} />
-            <LearningStat label="Interview Progress" value={stats.interviewPending} />
-            <LearningStat label="Flashcards Due" value={stats.flashcardsDue} />
-            <LearningStat label="Bookmarks" value={stats.bookmarkedItems} />
+          <div>
+            <p className="text-[13px] font-medium text-muted-foreground">{label}</p>
+            <p className="mt-2 text-[24px] font-semibold tracking-[-0.02em] text-foreground">
+              {value}
+              {suffix ? <span className="ml-1 text-[13px] text-muted-foreground">{suffix}</span> : null}
+            </p>
           </div>
         </div>
+        {detail ? <p className="mt-4 text-[13px] text-muted-foreground">{detail}</p> : null}
+        {typeof progress === "number" ? <Progress value={progress} className="mt-2 h-1.5" /> : null}
+        {trend ? (
+          <div className={`mt-4 inline-flex w-fit items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-medium ${trendClassName}`}>
+            <ArrowUp className="size-3" />
+            {trend}
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );
 }
 
-function LearningStat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-md border border-border/70 bg-background/32 p-4">
-      <p className="text-2xl font-semibold text-foreground">{value}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{label}</p>
-    </div>
-  );
-}
-
-function GreetingSection({
-  greeting,
-  profile,
-}: {
-  greeting: string;
-  profile: DashboardData["profile"];
-}) {
-  return (
-    <section className="rounded-lg border border-border/80 bg-card/60 px-6 py-7 shadow-shell sm:px-8">
-      <p className="text-sm font-medium text-primary">{profile.semester}</p>
-      <div className="mt-3 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-normal text-foreground sm:text-4xl">
-            {greeting}, {profile.name}
-          </h1>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
-            Your study space is ready. Start with today&apos;s mission, then continue the next topic.
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function TodaysMission({
+function TodaysPlanCard({
+  planner,
   completedTasks,
-  mission,
   onToggleTask,
 }: {
+  planner: PlannerDashboardData;
   completedTasks: string[];
-  mission: DashboardData["mission"];
   onToggleTask: (taskId: string) => void;
 }) {
+  const colors = ["bg-[#7C3AED]", "bg-[#3B82F6]", "bg-[#F59E0B]", "bg-[#22C55E]"];
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Today&apos;s Mission</CardTitle>
-        <CardDescription>{mission.length} focused study tasks for this session.</CardDescription>
+    <Card className="min-h-[330px]">
+      <CardHeader className="flex-row items-center justify-between space-y-0">
+        <div className="flex items-center gap-3">
+          <CalendarDays className="size-5 text-foreground" />
+          <CardTitle>Today&apos;s Plan</CardTitle>
+        </div>
+        <Link href="/planner" className="text-[13px] font-medium text-[#2563EB]">
+          View all
+        </Link>
       </CardHeader>
       <CardContent>
-        {mission.length === 0 ? (
-          <p className="rounded-md border border-border/70 bg-background/32 p-4 text-sm text-muted-foreground">
-            Study tasks will appear here once official syllabus topics are added.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {mission.map((task) => {
+        <div className="relative space-y-0 pl-6 before:absolute before:left-[8px] before:top-3 before:h-[calc(100%-20px)] before:w-px before:bg-border">
+          {planner.schedule.daily.slice(0, 4).map((task, index) => {
             const checked = completedTasks.includes(task.id);
 
             return (
-              <label
-                key={task.id}
-                className="flex min-h-14 cursor-pointer items-center gap-4 rounded-md border border-border/70 bg-background/32 px-4 transition-colors hover:bg-secondary/45"
-              >
+              <div key={task.id} className="relative grid grid-cols-[1fr_auto_auto] items-center gap-3 border-b border-border py-4 last:border-b-0">
+                <span className={`absolute -left-[22px] top-5 size-3 rounded-full border-2 border-background ${colors[index % colors.length]}`} />
+                <div className="min-w-0">
+                  <p className="truncate text-[14px] font-semibold text-foreground">{task.title}</p>
+                  <p className="mt-1 truncate text-[12px] text-muted-foreground">
+                    {task.module ?? task.subject} • {task.reason}
+                  </p>
+                </div>
+                <p className="hidden text-[12px] text-muted-foreground md:block">
+                  {task.estimatedMinutes}m
+                </p>
                 <Checkbox checked={checked} onChange={() => onToggleTask(task.id)} />
-                <span
-                  className={cn(
-                    "text-sm font-medium text-foreground transition-colors",
-                    checked && "text-muted-foreground line-through",
-                  )}
-                >
-                  {task.title}
-                </span>
-              </label>
+              </div>
             );
-            })}
-          </div>
-        )}
+          })}
+        </div>
+        <button type="button" className="mt-3 text-[13px] text-muted-foreground hover:text-foreground">
+          + Add task
+        </button>
       </CardContent>
     </Card>
   );
 }
 
-function ContinueLearning({
-  continueLearning,
+function UpcomingCard({
+  planner,
+  learningStats,
 }: {
-  continueLearning: DashboardData["continueLearning"];
+  planner: PlannerDashboardData;
+  learningStats: ReturnType<typeof learningService.getStats>;
 }) {
-  return (
-    <Card className="overflow-hidden">
-      <CardHeader>
-        <CardTitle>Continue Learning</CardTitle>
-        <CardDescription>The next study block waiting for you.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-md border border-border/70 bg-background/36 p-5">
-          <p className="text-sm font-medium text-primary">{continueLearning.subject}</p>
-          <h2 className="mt-4 text-2xl font-semibold tracking-normal text-foreground">
-            {continueLearning.topic}
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">{continueLearning.module}</p>
-          <Button asChild className="mt-8 gap-2">
-            <Link href={continueLearning.href ?? "/academics"}>
-              Resume
-              <ArrowRight className="size-4" />
-            </Link>
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+  const items = [
+    {
+      icon: Flame,
+      title: planner.summary.upcomingRevision,
+      subtitle: "Revision",
+      meta: `${learningStats.revisionDue} due`,
+      color: "bg-[#FFF7ED] text-[#F59E0B]",
+    },
+    {
+      icon: FileText,
+      title: "Notes Review",
+      subtitle: "Learning",
+      meta: `${learningStats.notesCount} notes`,
+      color: "bg-[#DCFCE7] text-[#22C55E]",
+    },
+    {
+      icon: BookOpen,
+      title: planner.summary.suggestedNextTopic,
+      subtitle: "Quick Revision",
+      meta: "Today",
+      color: "bg-[#DBEAFE] text-[#3B82F6]",
+    },
+    {
+      icon: CalendarDays,
+      title: "Weekly Planning",
+      subtitle: "Planner",
+      meta: `${planner.summary.weeklyProgress}%`,
+      color: "bg-[#FFF7ED] text-[#F59E0B]",
+    },
+  ];
 
-function SemesterProgress({ progress }: { progress: DashboardData["semesterProgress"] }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Semester Progress</CardTitle>
-        <CardDescription>Topic completion across the current semester.</CardDescription>
+    <Card className="min-h-[330px]">
+      <CardHeader className="flex-row items-center justify-between space-y-0">
+        <CardTitle>Upcoming</CardTitle>
+        <Link href="/planner" className="text-[13px] font-medium text-[#2563EB]">
+          View all
+        </Link>
       </CardHeader>
       <CardContent>
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="text-5xl font-semibold tracking-normal text-foreground">
-              {progress.percentage}%
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {progress.completedTopics} of {progress.totalTopics} topics completed
-            </p>
-          </div>
+        <div className="mb-4 flex gap-6 text-[13px]">
+          <span className="border-b-2 border-primary pb-2 font-medium text-primary">Revision</span>
+          <span className="pb-2 text-muted-foreground">Deadlines</span>
+          <span className="pb-2 text-muted-foreground">Events</span>
         </div>
-        <Progress value={progress.percentage} className="mt-8" />
-      </CardContent>
-    </Card>
-  );
-}
-
-function QuickActions({ quickActions }: { quickActions: DashboardData["quickActions"] }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Quick Actions</CardTitle>
-        <CardDescription>Move directly into the next academic workflow.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {quickActions.map((action, index) => {
-            const Icon = actionIcons[index];
+        <div className="divide-y divide-border">
+          {items.map((item) => {
+            const Icon = item.icon;
 
             return (
-              <Button
-                key={action.label}
-                asChild
-                variant="secondary"
-                className="h-14 justify-start gap-3 px-4"
-              >
-                <Link href={action.href}>
-                  <Icon className="size-4 text-primary" />
-                  {action.label}
-                </Link>
-              </Button>
+              <div key={item.title} className="grid grid-cols-[2.5rem_1fr_auto] items-center gap-3 py-3">
+                <div className={`flex size-9 items-center justify-center rounded-lg ${item.color}`}>
+                  <Icon className="size-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-[14px] font-semibold text-foreground">{item.title}</p>
+                  <p className="mt-1 truncate text-[12px] text-muted-foreground">{item.subtitle}</p>
+                </div>
+                <p className="text-right text-[13px] text-muted-foreground">{item.meta}</p>
+              </div>
             );
           })}
         </div>
@@ -316,81 +349,181 @@ function QuickActions({ quickActions }: { quickActions: DashboardData["quickActi
   );
 }
 
-function SkillsSection({ skills }: { skills: SkillSummary[] }) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Skills</CardTitle>
-        <CardDescription>Long-term learning outside semester coursework.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {skills.map((skill) => {
-            const locked = skill.status === "locked";
+function AiSuggestionsCard({ analytics }: { analytics: ReturnType<typeof analyticsService.getDashboardData> }) {
+  const suggestions = [
+    {
+      icon: Target,
+      title: `You're weak in ${analytics.insights.weakestSubject}. Want to revise?`,
+      subtitle: "Based on your recent performance.",
+      color: "bg-[#DCFCE7] text-[#22C55E]",
+    },
+    {
+      icon: FileQuestion,
+      title: "Practice pending PYQs",
+      subtitle: "High weightage practice belongs here.",
+      color: "bg-[#DBEAFE] text-[#3B82F6]",
+    },
+    {
+      icon: Clock3,
+      title: "Interview prep streak is low",
+      subtitle: "Keep it going with a focused session.",
+      color: "bg-[#FEF3C7] text-[#F59E0B]",
+    },
+  ];
 
-            return locked ? (
-              <div
-                key={skill.id}
-                className="rounded-md border border-border/70 bg-background/32 p-4 text-sm"
-              >
-                <p className="font-medium text-muted-foreground">{skill.name}</p>
-                <p className="mt-2 text-xs text-muted-foreground">Coming Soon</p>
+  return (
+    <Card className="min-h-[330px]">
+      <CardHeader className="flex-row items-center justify-between space-y-0">
+        <CardTitle>AI Suggestions</CardTitle>
+        <Link href="/knowledge" className="text-[13px] font-medium text-[#2563EB]">
+          View all
+        </Link>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {suggestions.map((suggestion) => {
+          const Icon = suggestion.icon;
+
+          return (
+            <Link
+              key={suggestion.title}
+              href="/knowledge"
+              className="grid grid-cols-[3rem_1fr_auto] items-center gap-3 rounded-xl border border-border bg-background p-4 transition-colors hover:bg-secondary/60"
+            >
+              <div className={`flex size-11 items-center justify-center rounded-full ${suggestion.color}`}>
+                <Icon className="size-5" />
               </div>
-            ) : (
-              <Link
-                key={skill.id}
-                href={`/skills/${skill.id}`}
-                className="rounded-md border border-primary/30 bg-primary/10 p-4 text-sm transition-colors hover:border-primary/55"
-              >
-                <p className="font-medium text-foreground">{skill.name}</p>
-                <p className="mt-2 text-xs text-primary">Unlocked</p>
-              </Link>
-            );
-          })}
-        </div>
+              <div className="min-w-0">
+                <p className="truncate text-[14px] font-semibold text-foreground">{suggestion.title}</p>
+                <p className="mt-1 truncate text-[12px] text-muted-foreground">{suggestion.subtitle}</p>
+              </div>
+              <ChevronRight className="size-4 text-muted-foreground" />
+            </Link>
+          );
+        })}
       </CardContent>
     </Card>
   );
 }
 
-function PlannerSummary({ planner }: { planner: PlannerDashboardData }) {
+function RecentSubjectsCard({ subjects }: { subjects: AnalyticsProgressItem[] }) {
+  const subjectColors = ["bg-[#7C3AED]", "bg-[#3B82F6]", "bg-[#22C55E]"];
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Today&apos;s Plan</CardTitle>
-        <CardDescription>A compact plan generated from your current progress.</CardDescription>
+    <Card className="min-h-[255px]">
+      <CardHeader className="flex-row items-center justify-between space-y-0">
+        <CardTitle>Recent Subjects</CardTitle>
+        <Link href="/academics" className="text-[13px] font-medium text-[#2563EB]">
+          View all
+        </Link>
       </CardHeader>
-      <CardContent>
-        <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
-          <div className="rounded-md border border-border/70 bg-background/32 p-5">
-            <div className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-md border border-primary/30 bg-primary/10 text-primary">
-                <Target className="size-4" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Today&apos;s Focus</p>
-                <p className="font-medium text-foreground">{planner.summary.todaysFocus}</p>
-              </div>
+      <CardContent className="space-y-5">
+        {subjects.slice(0, 3).map((subject, index) => (
+          <div key={subject.id} className="grid grid-cols-[2rem_1fr_auto] items-center gap-4">
+            <div className="flex size-8 items-center justify-center rounded-lg bg-secondary text-[#7C3AED]">
+              <BookOpen className="size-4" />
             </div>
-            <p className="mt-5 text-sm text-muted-foreground">
-              {timeEstimationService.formatMinutes(planner.summary.remainingStudyTimeMinutes)} remaining
-              across the current semester.
-            </p>
+            <div className="min-w-0">
+              <p className="truncate text-[14px] font-medium text-foreground">{subject.label}</p>
+            </div>
+            <div className="flex w-40 items-center gap-3">
+              <div className="h-1.5 flex-1 rounded-full bg-secondary">
+                <div
+                  className={`h-full rounded-full ${subjectColors[index % subjectColors.length]}`}
+                  style={{ width: `${subject.percentage}%` }}
+                />
+              </div>
+              <span className="w-8 text-right text-[12px] text-muted-foreground">
+                {subject.percentage}%
+              </span>
+            </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {planner.schedule.daily.slice(0, 4).map((task) => (
-              <Link
-                key={task.id}
-                href={task.href ?? "/planner"}
-                className="rounded-md border border-border/70 bg-background/32 p-4 transition-colors hover:border-primary/45"
-              >
-                <p className="truncate text-sm font-medium text-foreground">{task.title}</p>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {task.subject} / {task.estimatedMinutes}m
-                </p>
-              </Link>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+function LearningProgressCard() {
+  const points = [
+    [0, 88],
+    [16, 80],
+    [34, 62],
+    [48, 56],
+    [62, 42],
+    [78, 28],
+    [94, 22],
+  ];
+  const path = points.map(([x, y]) => `${x},${y}`).join(" ");
+
+  return (
+    <Card className="min-h-[255px]">
+      <CardHeader className="flex-row items-center justify-between space-y-0">
+        <CardTitle>Learning Progress</CardTitle>
+        <button type="button" className="text-[13px] text-muted-foreground">
+          This Week⌄
+        </button>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[160px] rounded-xl bg-background">
+          <svg viewBox="0 0 100 100" className="h-full w-full overflow-visible">
+            {[20, 40, 60, 80].map((line) => (
+              <line
+                key={line}
+                x1="0"
+                x2="100"
+                y1={line}
+                y2={line}
+                stroke="#E5E7EB"
+                strokeDasharray="2 3"
+                strokeWidth="0.6"
+              />
             ))}
-          </div>
+            <polygon points={`0,100 ${path} 100,100`} fill="rgba(124, 58, 237, 0.08)" />
+            <polyline
+              fill="none"
+              points={path}
+              stroke="#7C3AED"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2.2"
+            />
+            {points.map(([x, y]) => (
+              <circle key={`${x}-${y}`} cx={x} cy={y} r="2.5" fill="#7C3AED" />
+            ))}
+          </svg>
+        </div>
+        <div className="grid grid-cols-7 text-center text-[12px] text-muted-foreground">
+          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+            <span key={day}>{day}</span>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function QuickActionsCard() {
+  return (
+    <Card className="min-h-[255px]">
+      <CardHeader>
+        <CardTitle>Quick Actions</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {quickActions.map((action) => {
+            const Icon = action.icon;
+
+            return (
+              <Link
+                key={action.label}
+                href={action.href}
+                className="flex h-[76px] flex-col items-center justify-center gap-2 rounded-xl border border-border bg-background text-center text-[13px] font-medium text-foreground transition-colors hover:bg-secondary"
+              >
+                <Icon className={`size-5 ${action.color}`} />
+                {action.label}
+              </Link>
+            );
+          })}
         </div>
       </CardContent>
     </Card>

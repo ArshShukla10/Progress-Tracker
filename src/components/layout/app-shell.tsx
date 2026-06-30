@@ -7,9 +7,9 @@ export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      <div className="min-h-screen lg:pl-72">
+      <div className="min-h-screen lg:pl-[260px]">
         <TopNavigation />
-        <main className="min-h-[calc(100vh-4rem)] px-4 py-5 sm:px-6 lg:px-8">
+        <main className="min-h-[calc(100vh-68px)] px-4 py-8 sm:px-6 lg:px-10">
           {children}
         </main>
       </div>
