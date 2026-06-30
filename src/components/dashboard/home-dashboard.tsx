@@ -1,7 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight, BookOpen, CalendarDays, GraduationCap, NotebookText, Target } from "lucide-react";
+import {
+  ArrowRight,
+  BookOpen,
+  CalendarDays,
+  GraduationCap,
+  Library,
+  NotebookText,
+  Target,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -18,6 +26,7 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { academicService } from "@/services/academic-service";
 import { learningStorageService } from "@/services/learning-storage-service";
+import { learningService } from "@/services/learning/learning-service";
 import { plannerService } from "@/services/planner/planner-service";
 import { timeEstimationService } from "@/services/planner/time-estimation-service";
 import { skillService } from "@/services/skill-service";
@@ -45,6 +54,7 @@ export function HomeDashboard() {
   const greeting = useMemo(() => getGreeting(), []);
   const dashboardData = useMemo(() => academicService.getDashboardData(), []);
   const plannerData = useMemo(() => plannerService.getDashboardData(), []);
+  const learningStats = useMemo(() => learningService.getStats(), []);
   const [continueLearning, setContinueLearning] = useState(dashboardData.continueLearning);
 
   useEffect(() => {
@@ -90,8 +100,60 @@ export function HomeDashboard() {
 
       <SkillsSection skills={skillService.getAllSkills()} />
 
+      <LearningIntelligenceSummary stats={learningStats} />
+
       <PlannerSummary planner={plannerData} />
     </motion.section>
+  );
+}
+
+function LearningIntelligenceSummary({
+  stats,
+}: {
+  stats: ReturnType<typeof learningService.getStats>;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Learning Intelligence</CardTitle>
+        <CardDescription>Notes, PYQs, revision, flashcards, interviews, and bookmarks.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
+          <div className="rounded-md border border-border/70 bg-background/32 p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-md border border-primary/30 bg-primary/10 text-primary">
+                <Library className="size-4" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Unified Workspace</p>
+                <p className="font-medium text-foreground">Ready for real content</p>
+              </div>
+            </div>
+            <Button asChild variant="secondary" className="mt-5">
+              <Link href="/knowledge">Open Workspace</Link>
+            </Button>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <LearningStat label="Recent Notes" value={stats.notesCount} />
+            <LearningStat label="Today's Revision" value={stats.revisionDue} />
+            <LearningStat label="Pending PYQs" value={stats.pyqsPending} />
+            <LearningStat label="Interview Progress" value={stats.interviewPending} />
+            <LearningStat label="Flashcards Due" value={stats.flashcardsDue} />
+            <LearningStat label="Bookmarks" value={stats.bookmarkedItems} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LearningStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-md border border-border/70 bg-background/32 p-4">
+      <p className="text-2xl font-semibold text-foreground">{value}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{label}</p>
+    </div>
   );
 }
 

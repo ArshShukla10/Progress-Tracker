@@ -1,5 +1,6 @@
 import { analyticsService } from "@/services/analytics/analytics-service";
 import { gamificationService } from "@/services/gamification/gamification-service";
+import { learningService } from "@/services/learning/learning-service";
 import { calendarService } from "@/services/planner/calendar-service";
 import { goalPlanner } from "@/services/planner/goal-planner";
 import { priorityService } from "@/services/planner/priority-service";
@@ -14,7 +15,11 @@ function getDashboardData(
   analytics: AnalyticsDashboardData = analyticsService.getDashboardData(),
 ): PlannerDashboardData {
   const tasks = taskService.getPlannerTasks(analytics);
-  const priorityQueue = priorityService.sortByPriority(tasks).filter((task) => task.status !== "completed");
+  const learningTasks = learningService.getPlannerTasks();
+  const allTasks = [...tasks, ...learningTasks];
+  const priorityQueue = priorityService
+    .sortByPriority(allTasks)
+    .filter((task) => task.status !== "completed");
   const schedule = scheduleService.getPlannerSchedule(priorityQueue);
   const goals = goalPlanner.getPlannerGoals(analytics);
   const recommendations = recommendationService.getRecommendations(analytics, priorityQueue);
@@ -28,10 +33,10 @@ function getDashboardData(
 
   return {
     generatedAt: new Date().toISOString(),
-    tasks,
+    tasks: allTasks,
     priorityQueue,
     schedule,
-    calendar: calendarService.getPlannerCalendar(tasks),
+    calendar: calendarService.getPlannerCalendar(allTasks),
     goals,
     recommendations,
     timeEstimates,

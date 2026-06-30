@@ -1,5 +1,5 @@
-import { PageContainer } from "@/components/layout/page-container";
+import { LearningIntelligenceWorkspace } from "@/components/learning/workspace/learning-intelligence-workspace";
 
 export default function KnowledgePage() {
-  return <PageContainer />;
+  return <LearningIntelligenceWorkspace />;
 }

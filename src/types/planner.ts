@@ -14,6 +14,7 @@ export type PlannerTaskSource =
   | "revision"
   | "quiz"
   | "pyq"
+  | "flashcards"
   | "interview"
   | "notes";
 
